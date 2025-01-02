@@ -46,6 +46,7 @@ const validateToken = (req, res) => {
   }
 };
 
+//Register User
 const registerUser = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -55,22 +56,23 @@ const registerUser = async (req, res) => {
     const { email, username, password, firstName, lastName, phoneNumber } =
       req.body;
 
-    let user = await User.findOne({ email });
-
-    if (user) {
-      return res
-        .status(400)
-        .json({ msg: "User with this email already exists" });
+    const isValidUsername = validateUsername(username);
+    if (!isValidUsername) {
+      return res.status(400).json({ msg: "Username contains spcae or special character." });
     }
 
-    user = await User.findOne({ username });
-    if (user) {
-      return res
-        .status(400)
-        .json({ msg: "User with this username already exists" });
+    let response = await userService.findUserByEmail(email);
+
+    if (response.status) {
+      return res.status(400).json({ msg: response.message }); //email already exist
     }
 
-    user = new User({
+    response = await userService.findUserByUsername(username);
+    if (response.status) {
+      return res.status(400).json({ msg: response.message }); //username already exist
+    }
+
+    const user = new User({
       email,
       username,
       password,
@@ -82,27 +84,35 @@ const registerUser = async (req, res) => {
     await user.save();
 
     const token = generateToken(user.id);
-    res.status(200).json({ token });
+    console.log(token);
+
+    res.status(200).json({  msg: "User Registered Successfully" , token , user});
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server Error");
   }
 };
 
+//Login User
 const loginUser = async (req, res) => {
   try {
     const errors = validationResult(req);
-    console.log(req.body);
-    
+
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
     const { emailOrUsername, password } = req.body;
 
-    let user = await User.findOne({
-      $or: [{ email: emailOrUsername }, { username: emailOrUsername }],
-    });
+    let response = await userService.findUserByEmail(emailOrUsername);
+    if (response.status === false) {
+      response = await userService.findUserByUsername(emailOrUsername);
+      if (response.status === false) {
+        return res.status(400).json({ msg: response.message });
+      }
+    }
+
+    const user = response.data;
 
     if (!user) {
       return res.status(400).json({ msg: "Invalid Email or Username" });
@@ -112,7 +122,7 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ msg: "Invalid Password" });
     }
 
-    res.status(200).json({ msg: "User Logged In Successfully" });
+    res.status(200).json({ msg: "User Logged In Successfully", user });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server Error");
@@ -120,9 +130,18 @@ const loginUser = async (req, res) => {
 };
 
 const sendMail_check = async (req, res) => {
-  sendMail('ishapaghdal0@gmail.com','subject','text');
+  sendMail("ishapaghdal0@gmail.com", "subject", "text");
+};
+
+//validateUsername
+function validateUsername(username) {
+  const usernameRegex = /^[a-zA-Z0-9]+$/;
+
+  if (!usernameRegex.test(username)) {
+    return false;
+  }
+  return true;
 }
-    
 
 module.exports = {
   generateToken,
