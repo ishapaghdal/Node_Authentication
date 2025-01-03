@@ -1,6 +1,4 @@
 const jwt = require("jsonwebtoken");
-const crypto = require("crypto");
-
 const { validationResult } = require("express-validator");
 
 //Models
@@ -55,11 +53,16 @@ const registerUser = async (req, res) => {
     }
     const { email, username, password, firstName, lastName, phoneNumber } =
       req.body;
-
-    const isValidUsername = validateUsername(username);
-    if (!isValidUsername) {
-      return res.status(400).json({ msg: "Username contains spcae or special character." });
-    }
+    
+      if(!email){
+        return res.status(400).json({ msg: "Email is required" });
+      }
+      if(!username){
+        return res.status(400).json({ msg: "Username is required" });
+      }
+      if(!password){
+        return res.status(400).json({ msg: "Password is required" });
+      }
 
     let response = await userService.findUserByEmail(email);
 
@@ -129,19 +132,11 @@ const loginUser = async (req, res) => {
   }
 };
 
+//Not implemented yet
 const sendMail_check = async (req, res) => {
   sendMail("ishapaghdal0@gmail.com", "subject", "text");
 };
 
-//validateUsername
-function validateUsername(username) {
-  const usernameRegex = /^[a-zA-Z0-9]+$/;
-
-  if (!usernameRegex.test(username)) {
-    return false;
-  }
-  return true;
-}
 
 module.exports = {
   generateToken,
