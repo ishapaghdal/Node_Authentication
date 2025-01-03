@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
+const bcrypt = require('bcryptjs');
 
 //Models
 const User = require("../models/User");
@@ -53,16 +54,6 @@ const registerUser = async (req, res) => {
     }
     const { email, username, password, firstName, lastName, phoneNumber } =
       req.body;
-    
-      if(!email){
-        return res.status(400).json({ msg: "Email is required" });
-      }
-      if(!username){
-        return res.status(400).json({ msg: "Username is required" });
-      }
-      if(!password){
-        return res.status(400).json({ msg: "Password is required" });
-      }
 
     let response = await userService.findUserByEmail(email);
 
@@ -75,21 +66,25 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ msg: response.message }); //username already exist
     }
 
+    //Hash Password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
     const user = new User({
       email,
       username,
-      password,
+      password: hashedPassword,
       firstName,
       lastName,
       phoneNumber,
     });
 
-    await user.save();
+    const savedUser = await userService.saveUser(user);
 
-    const token = generateToken(user.id);
+    const token = generateToken(savedUser.id);
     console.log(token);
 
-    res.status(200).json({  msg: "User Registered Successfully" , token , user});
+    res.status(200).json({  msg: "User Registered Successfully" , token , savedUser});
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server Error");
@@ -105,7 +100,7 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { emailOrUsername, password } = req.body;
+    const { email:emailOrUsername, password } = req.body;
 
     let response = await userService.findUserByEmail(emailOrUsername);
     if (response.status === false) {
@@ -121,7 +116,7 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ msg: "Invalid Email or Username" });
     }
 
-    if (password !== user.password) {
+    if (!(await bcrypt.compare(password, user.password))) {
       return res.status(400).json({ msg: "Invalid Password" });
     }
 
@@ -136,7 +131,6 @@ const loginUser = async (req, res) => {
 const sendMail_check = async (req, res) => {
   sendMail("ishapaghdal0@gmail.com", "subject", "text");
 };
-
 
 module.exports = {
   generateToken,

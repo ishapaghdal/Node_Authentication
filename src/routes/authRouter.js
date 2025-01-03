@@ -7,9 +7,8 @@ const authController = require('../controllers/authController');
 //middlewares
 const authMiddleware = require('../middlewares/authMiddleware');
 
-router.use(authMiddleware.validateUsername);
-router.post('/register', authController.registerUser);
-router.post('/login', authController.loginUser);
+router.post('/register',authMiddleware.validateRegister, authController.registerUser);
+router.post('/login', authMiddleware.validateLogin,authController.loginUser);
 // router.get('/mail', authController.sendMail_check);//not implemented yet so ignore this
 
 module.exports = router;

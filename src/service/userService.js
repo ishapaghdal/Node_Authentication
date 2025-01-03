@@ -44,4 +44,9 @@ const findUserByUsername = async (username) => {
   }
 };
 
-module.exports = { findUserByEmail, findUserByUsername };
+const saveUser = async (user) => {
+  user = new User(user);
+  await user.save();
+  return user;
+};
+module.exports = { findUserByEmail, findUserByUsername, saveUser };
