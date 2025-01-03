@@ -47,6 +47,7 @@ To start the application, use the following command:
 nodemon
 ```
 ## Test
+[Live Demo - My Website](https://node-authentication-eta.vercel.app/)
 You can test the backend by hitting the API endpoints on the live demo link above. Here are some example endpoints you can use:
 
 | **Action**       | **Method** | **Endpoint**            |
